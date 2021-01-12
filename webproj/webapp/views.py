@@ -1,14 +1,12 @@
 from random import random, randint
 
 from django.shortcuts import redirect, render
-from BaseXClient import BaseXClient
-from anotherone.settings import BASE_DIR
 import os
-import lxml.etree as ET
-import xmltodict
 from django.contrib.admin.utils import flatten
 import requests
-from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+from s4api.graphdb_api import GraphDBApi
+from s4api.swagger import ApiClient
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 # Create your views here.
