@@ -17,13 +17,13 @@ def index(request):
     client = ApiClient(endpoint=endpoint)
     accessor = GraphDBApi(client)
     query = """
-                    PREFIX pred: <http://gamesdb.com/predicate/>
-                SELECT ?title ?pred ?obj
+                   PREFIX pred: <http://gamesdb.com/predicate/>
+                SELECT ?game ?pred ?obj
                 WHERE{
                     ?game ?pred ?obj .
-                    ?game pred:positive-ratings ?title .
+                    ?game pred:positive-ratings ?ratings .
                 }
-                limit 10
+                
                 """
     payload_query = {"query": query}
     res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
@@ -31,11 +31,17 @@ def index(request):
     res = res['results']['bindings']
     game = {}
     for res_tmp in res:
-        print(res_tmp)
-        break
+        gameid = res_tmp['game']['value'].split("/")[-1]
+        key = res_tmp['pred']['value'].split("/")[-1]
+        if gameid not in game.keys():
+           game[gameid] = {key:res_tmp['obj']['value'] }
+        else:
+            tmp = game[gameid]
+            tmp_dic = {key: res_tmp['obj']['value']}
+            tmp.update(tmp_dic)
 
-    games = {}
 
+    print(game['440'])
     return render(request, 'index.html', tparams)
 
 
