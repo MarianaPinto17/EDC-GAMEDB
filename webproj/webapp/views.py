@@ -1,3 +1,4 @@
+import json
 from random import random, randint
 
 from django.shortcuts import redirect, render
@@ -11,23 +12,30 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 
 # Create your views here.
 def index(request):
-    session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
-    session.execute("open dataset")
-    all_games = "let $games := collection('dataset') return $games"
-    query = session.query(all_games)
+    endpoint = "http://localhost:7200"
+    repo_name = "gamesdb"
+    client = ApiClient(endpoint=endpoint)
+    accessor = GraphDBApi(client)
+    query = """
+                    PREFIX pred: <http://gamesdb.com/predicate/>
+                SELECT ?title ?pred ?obj
+                WHERE{
+                    ?game ?pred ?obj .
+                    ?game pred:positive-ratings ?title .
+                }
+                limit 10
+                """
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    res = res['results']['bindings']
+    game = {}
+    for res_tmp in res:
+        print(res_tmp)
+        break
 
-    result = "<?xml version=\"1.0\"?>" + "\n\r" + query.execute()
-    xsl_file = os.path.join(BASE_DIR, 'webapp/xslt/' + 'homepage.xsl')
+    games = {}
 
-    tree = ET.fromstring(bytes(result, "utf-8"))
-    xslt = ET.parse(xsl_file)
-    transform = ET.XSLT(xslt)
-    newdoc = transform(tree)
-
-    session.close()
-    tparams = {
-        'content': newdoc
-    }
     return render(request, 'index.html', tparams)
 
 
