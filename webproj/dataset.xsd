@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="games" type="gamesType"/>
+  <xs:complexType name="companyType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="name"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="developersType">
+    <xs:sequence>
+      <xs:element type="companyType" name="company" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="publishersType">
+    <xs:sequence>
+      <xs:element type="companyType" name="company" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="categoriesType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="category" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="genresType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="genre" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="tagsType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="tag" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ratingsType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="positive"/>
+      <xs:element type="xs:string" name="negative"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="playtimeType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="average"/>
+      <xs:element type="xs:string" name="median"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ownershipType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="lower_bound"/>
+      <xs:element type="xs:string" name="upper_bound"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="imageType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="thumbnail_size" minOccurs="0"/>
+      <xs:element type="xs:string" name="full_size"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="headerType">
+    <xs:sequence>
+      <xs:element type="imageType" name="image"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="screenshotsType">
+    <xs:sequence>
+      <xs:element type="imageType" name="image" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="backgroundType">
+    <xs:sequence>
+      <xs:element type="imageType" name="image"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="thumbnailType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="image"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="movieType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="name"/>
+      <xs:element type="thumbnailType" name="thumbnail"/>
+      <xs:element type="xs:string" name="webm"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="moviesType">
+    <xs:sequence>
+      <xs:element type="movieType" name="movie" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="galleryType">
+    <xs:sequence>
+      <xs:element type="headerType" name="header"/>
+      <xs:element type="screenshotsType" name="screenshots" minOccurs="0"/>
+      <xs:element type="backgroundType" name="background" minOccurs="0"/>
+      <xs:element type="moviesType" name="movies" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="gameType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="title"/>
+      <xs:element type="xs:string" name="release-date"/>
+      <xs:element name="english_available">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="True"/>
+            <xs:enumeration value="False"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element type="developersType" name="developers"/>
+      <xs:element type="publishersType" name="publishers"/>
+      <xs:element name="required_age">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value=" "/>
+            <xs:enumeration value=" 18"/>
+            <xs:enumeration value=" 16"/>
+            <xs:enumeration value=" 12"/>
+            <xs:enumeration value=" 7"/>
+            <xs:enumeration value=" 3"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element type="categoriesType" name="categories"/>
+      <xs:element type="genresType" name="genres"/>
+      <xs:element type="tagsType" name="tags"/>
+      <xs:element type="ratingsType" name="ratings"/>
+      <xs:element type="playtimeType" name="playtime"/>
+      <xs:element type="ownershipType" name="ownership"/>
+      <xs:element type="xs:string" name="price"/>
+      <xs:element type="xs:string" name="description"/>
+      <xs:element type="galleryType" name="gallery"/>
+    </xs:sequence>
+    <xs:attribute type="xs:string" name="id" use="optional"/>
+  </xs:complexType>
+  <xs:complexType name="gamesType">
+    <xs:sequence>
+      <xs:element type="gameType" name="game" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

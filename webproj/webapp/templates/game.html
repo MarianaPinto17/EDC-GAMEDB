@@ -1,0 +1,253 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{{ game_title }}</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}" rel="stylesheet">
+
+
+  <!-- Custom styles for this template -->
+    <link href="{% static 'css/blog-post.css' %}" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="/">GamesDB</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="/">Games
+              <span class="sr-only">(current)</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/news">News</a>
+          </li>
+          <li class="nav-item px-2">
+            <a class="nav-link" href="/add_game">Add Game</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/advanced_search">Advanced search</a>
+          </li>
+          <form class="form-inline my-2 my-lg-0">
+              <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+              <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+          </form>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+<!-- Page Content -->
+<div class="container">
+
+    <div class="row">
+
+        <!-- Post Content Column -->
+        <div class="col-lg-8">
+
+            <!-- Title -->
+            <h1 class="mt-4">{{ game_title }}</h1>
+
+            <!-- Author -->
+            <p class="lead">
+                by
+                <a>Admin</a>
+            </p>
+
+
+            <hr>
+
+            <!-- Preview Image -->
+            <img class="img-fluid rounded" src="{{ game_image }}" alt="">
+
+            <hr>
+
+            <!-- Post Content -->
+            <p class="lead">Release Date: {{ release }}</p>
+            <p class="lead">Developer(s): {% for developer in devs %}
+                            <a>|{{developer}}|</a>
+                        {% endfor %}</p>
+            <p class="lead">Genre(s): {% for genre in genres %}
+                                         <a>|{{ genre }}|</a>
+                                        {% endfor %}</p>
+
+            <p class="lead">English Available: {{ english}}</p>
+            <p class="lead">Positive Votes: {{ positive }}</p>
+            <p class="lead">Negative Votes: {{ negative }}</p>
+            <p class="lead">Estimated {{ lower }} - {{ higher }} units sold</p>
+            <p class="lead">Synopsis: {{ game_description }}</p>
+
+
+            <div class="container_gallery">
+                <h3>Gallery</h3>
+                {% for image in images %}
+                <div class="mySlides">
+                    <img src="{{ image }}" style="width:100%">
+                </div>
+                {% endfor %}
+                <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+                <a class="next" onclick="plusSlides(1)">&#10095;</a>
+
+                <div class="row">
+                    {% for thumbnail in thumbnails %}
+                    <div class="column">
+                      <img class="demo cursor"  src="{{ thumbnail }}" style="width:100%" onclick="currentSlide({{ forloop.counter }})" alt="">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+
+
+
+
+
+            <p align="right" style="padding-top: 5%"> <button type="submit" class="btn btn-secondary" type="button" onclick="deleteAlert('{{ game_id }}')">Delete</button></p>
+                <script>function deleteAlert(game) {
+                    if (confirm("Are you sure you want to delete the game with id: \"" + game + "\" from the database?")) window.location.replace("http://127.0.0.1:8000/delete_game/"+game);
+                }</script>
+
+
+
+            <!--
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ut, tenetur natus doloremque laborum quos iste
+                ipsum rerum obcaecati impedit odit illo dolorum ab tempora nihil dicta earum fugiat. Temporibus,
+                voluptatibus.</p>
+
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Eos, doloribus, dolorem iusto blanditiis unde
+                eius illum consequuntur neque dicta incidunt ullam ea hic porro optio ratione repellat perspiciatis.
+                Enim, iure!</p>
+
+            <blockquote class="blockquote">
+                <p class="mb-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a
+                    ante.</p>
+                <footer class="blockquote-footer">Someone famous in
+                    <cite title="Source Title">Source Title</cite>
+                </footer>
+            </blockquote>
+
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Error, nostrum, aliquid, animi, ut quas placeat
+                totam sunt tempora commodi nihil ullam alias modi dicta saepe minima ab quo voluptatem obcaecati?</p>
+
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Harum, dolor quis. Sunt, ut, explicabo, aliquam
+                tenetur ratione tempore quidem voluptates cupiditate voluptas illo saepe quaerat numquam recusandae?
+                Qui, necessitatibus, est!</p>
+
+                ADD LONGER DESCRIPTION MAYBE
+             -->
+
+
+            <hr>
+
+
+
+            <!-- Comments Form -->
+            <div class="card my-4">
+                <h5 class="card-header">Leave a Comment:</h5>
+                <div class="card-body">
+                    <form action="/add_comment/{{ game_id }}" method="post">
+                        {% csrf_token %}
+                        <div class="row"><p style="padding-right: 2%; padding-left: 2%; margin-top:1%  ">Name (leave blank for anonymous):</p><input type="text" name="nickname"></div>
+
+                        <div class="form-group" style="padding-block: 5%">
+                            <p>Comment:</p>
+                            <textarea class="form-control" rows="3" maxlength="100" name="comment"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Single Comment -->
+            <h2 style="padding-bottom: 5%">Comments</h2>
+
+            {% for author, comment in comments %}
+
+            <div class="media mb-4" style="padding-bottom: 5%">
+                <img class="d-flex mr-3 rounded-circle" width="50" height="50" src="https://i.stack.imgur.com/l60Hf.png" alt="">
+                <div class="media-body">
+                    <h5 class="mt-0" id="author">{{author}}</h5>
+                    {{ comment }}
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+
+        <!-- Sidebar Widgets Column -->
+
+
+    </div>
+    <!-- /.row -->
+
+</div>
+<!-- /.container -->
+
+<!-- Footer -->
+<footer class="py-5 bg-dark">
+    <div class="container">
+        <p class="m-0 text-center text-white">EDC 2020</p>
+    </div>
+    <!-- /.container -->
+</footer>
+
+<!-- Bootstrap core JavaScript -->
+  <script src="{% static 'vendor/jquery/jquery.min.js'%}"></script>
+  <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js'%}"></script>
+  <script>
+      function anon() {
+          if (document.getElementById("author").value === "") {
+              document.getElementById("author").value = "Anonymous";
+          }
+      }
+  </script>
+  <script>
+      var slideIndex = 1;
+showSlides(slideIndex);
+
+// Next/previous controls
+function plusSlides(n) {
+  showSlides(slideIndex += n);
+}
+
+// Thumbnail image controls
+function currentSlide(n) {
+  showSlides(slideIndex = n);
+}
+
+      function showSlides(n) {var i;
+  var slides = document.getElementsByClassName("mySlides");
+  var dots = document.getElementsByClassName("demo");
+  if (n > slides.length) {slideIndex = 1}
+  if (n < 1) {slideIndex = slides.length}
+  for (i = 0; i < slides.length; i++) {
+    slides[i].style.display = "none";
+  }
+  for (i = 0; i < dots.length; i++) {
+    dots[i].className = dots[i].className.replace(" active", "");
+  }
+  slides[slideIndex-1].style.display = "block";
+  dots[slideIndex-1].className += " active";
+} </script>
+
+
+</body>
+
+</html>
