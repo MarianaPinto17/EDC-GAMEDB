@@ -30,19 +30,89 @@ def index(request):
     res = json.loads(res)
     res = res['results']['bindings']
     game = {}
+    developers = []
+    categories = []
+    screenshots = []
+    publishers = []
     for res_tmp in res:
         gameid = res_tmp['game']['value'].split("/")[-1]
         key = res_tmp['pred']['value'].split("/")[-1]
         if gameid not in game.keys():
            game[gameid] = {key:res_tmp['obj']['value'] }
+           developers = []
+           categories = []
+           screenshots = []
+           publishers = []
         else:
             tmp = game[gameid]
-            tmp_dic = {key: res_tmp['obj']['value']}
-            tmp.update(tmp_dic)
+            value = res_tmp['obj']['value']
+            if key == "screenshots":
+                screenshots.append(value)
+                tmp_dic = {key: screenshots}
+            elif key == "category":
+                categories.append({value: ""})
+                tmp_dic = {key: categories}
+            elif key == "developers":
+                developers.append({value: ""})
+                tmp_dic = {key: developers}
+            elif key == "publishers":
+                publishers.append({value:""})
+                tmp_dic = {key: publishers}
+            else:
+                tmp_dic = {key: res_tmp['obj']['value']}
 
+            tmp.update(tmp_dic)
+    print(game['440'])
+
+    for game_tmp in game.keys():
+        developer_index = 0
+        publisher_index = 0
+        category_index = 0
+        for developer_list in game[game_tmp]['developers']:
+            developer = list(developer_list.keys())[0]
+            query = """ PREFIX company: <http://gamesdb.com/entity/company/>
+                        prefix predicate: <http://gamesdb.com/predicate/>
+                            select ?name where{
+                                company:""" + developer.split("/")[-1] + " predicate:name ?name.}"
+
+            payload_query = {"query": query}
+            res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+            res = json.loads(res)
+            res = res['results']['bindings']
+            game[game_tmp]['developers'][developer_index].update({developer: res[0]['name']['value']})
+            developer_index = developer_index + 1
+
+        for publisher_list in game[game_tmp]['publishers']:
+            publisher = list(publisher_list.keys())[0]
+            query = """ PREFIX company: <http://gamesdb.com/entity/company/>
+                        prefix predicate: <http://gamesdb.com/predicate/>
+                            select ?name where{
+                                company:""" + publisher.split("/")[-1] + " predicate:name ?name.}"
+
+            payload_query = {"query": query}
+            res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+            res = json.loads(res)
+            res = res['results']['bindings']
+            game[game_tmp]['publishers'][publisher_index].update({publisher: res[0]['name']['value']})
+            publisher_index = publisher_index + 1
+
+        for category_list in game[game_tmp]['category']:
+            category = list(category_list.keys())[0]
+            query = """ PREFIX category: <http://gamesdb.com/entity/categories/>
+                        prefix predicate: <http://gamesdb.com/predicate/>
+                            select ?name where{
+                                category:""" + category.split("/")[-1] + " predicate:name ?name.}"
+
+            payload_query = {"query": query}
+            res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+            res = json.loads(res)
+            res = res['results']['bindings']
+            game[game_tmp]['category'][category_index].update({category: res[0]['name']['value']})
+            category_index = category_index + 1
 
     print(game['440'])
-    return render(request, 'index.html', tparams)
+    tparam = {'game':game}
+    return render(request, 'index.html', tparam)
 
 
 def showGame(request, game_id):

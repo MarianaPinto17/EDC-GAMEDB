@@ -59,7 +59,55 @@
     </div>
   </nav>
 
-  {{ content | safe }}
+  {% for key, value in game.items %}
+
+
+  <div class="d-flex flex-row" style="min-width: 0;
+                                                word-wrap: break-word;
+                                                background-color: #fff;
+                                                background-clip: border-box;
+                                                border: 1px solid rgba(0, 0, 0, 0.125);
+                                                border-radius: 0.25rem;
+                                                border-bottom-right-radius: 0.25rem;
+                                                border-bottom-left-radius: 0.25rem;
+                                                margin-bottom: 1.5rem !important;
+                                                padding-block: 2%">
+                <div class="p-2" style="padding-left: 7% !important">
+                    <!--<img class="card-img-top" src="" alt="Card image cap"/>-->
+                    <img src="{{value.header}}" alt="Card image cap" class="card-img-top">
+
+                </div>
+                <div class="p-2">
+                    <!--<div class="card-body" style="align-items: baseline">-->
+                    <p style="font-size:30px">
+                        <a href="/game/{{ key }}">
+                            {{ value.name }}
+                        </a>
+                    </p>
+                    <p>Price: {{ value.price }}</p>
+
+                    <p> Release Date: {{ value.date }}</p>
+
+                    <p> Genres:
+
+                       {% for genre in value.category %}
+                            {% for genre_uri, genre_string in genre.items %}
+                                <a href="{{ genre_uri }}">{{ genre_string }}</a>
+                                {% endfor %}
+                       {% endfor %}
+
+
+                    </p>
+                    <!--</div>-->
+                </div>
+                <!--
+                <div class="card-footer text-muted">
+                    Posted on January 1, 2017 by
+                    <a href="#">Start Bootstrap</a>
+                </div>
+                -->
+            </div>
+  {% endfor %}
 
   <!-- Footer -->
 
