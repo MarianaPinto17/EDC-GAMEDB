@@ -201,6 +201,17 @@ def showGame(request, game_id):
         game['category'][category_index].update({category: res[0]['name']['value']})
         category_index = category_index + 1
 
+    full_size = []
+    thumbnail = []
+    for i in range(0, len(screenshots),2):
+        full_size.append(screenshots[i])
+    for i in range(1, len(screenshots),2):
+        thumbnail.append(screenshots[i])
+    print(thumbnail)
+
+
+
+
     new_params = {'game_title': game['name'],
                   'game_image': game['header'],
                   'game_description': game['description'],
@@ -213,7 +224,8 @@ def showGame(request, game_id):
                   'lower': game['lower-ownership'],
                   'higher': game['upper-ownership'],
                   'game_id': game_id,
-                  'images': game['screenshots'],
+                  'images': full_size,
+                  'thumbnails': thumbnail
                   }
 
     return render(request, 'game.html', new_params)
