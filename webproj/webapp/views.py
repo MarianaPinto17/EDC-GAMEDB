@@ -203,14 +203,11 @@ def showGame(request, game_id):
 
     full_size = []
     thumbnail = []
-    for i in range(0, len(screenshots),2):
+    for i in range(0, len(screenshots), 2):
         full_size.append(screenshots[i])
-    for i in range(1, len(screenshots),2):
+    for i in range(1, len(screenshots), 2):
         thumbnail.append(screenshots[i])
     print(thumbnail)
-
-
-
 
     new_params = {'game_title': game['name'],
                   'game_image': game['header'],
@@ -306,39 +303,107 @@ def searchGame_2(request):
     client = ApiClient(endpoint=endpoint)
     accessor = GraphDBApi(client)
     query = """
+                    PREFIX pred: <http://gamesdb.com/predicate/>
+                   PREFIX game: <http://gamesdb.com/entity/game/>
+                
+				SELECT ?game ?pred ?obj
+				WHERE{
+    				?game ?pred ?obj.
+    				?game pred:name ?name .
+    				?game pred:positive-ratings ?ratings.
+    			filter(contains(lcase(?name), \"""" + pattern.lower() + "\"))}"
 
-                """
-
-    """session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
-    session.execute("open dataset")
-    search_query = "for $games in collection('dataset')/games/game for $genre in $games//genre for $tags in " + "$games//tag where contains(lower-case(" +"$games/title), lower-case('" + pattern + "')) or contains(lower-case($genre), lower-case('" + pattern +  "'))" + " or contains(lower-case($tags), lower-case('" + pattern + "')) return $games "
-    print(search_query)
-    query = session.query(search_query)
-
-    result = "<?xml version=\"1.0\"?>" + "\n\r<games>\n" + query.execute() + "\n</games>\n"
-    xsl_file = os.path.join(BASE_DIR, 'webapp/xslt/' + 'homepage.xsl')
-
-    tree = ET.fromstring(result)
-
-    visited = set()
-    for el in tree.iter('game'):
-
-        if 'id' in el.keys():
-            current = el.get('id')
-            if current in visited:
-                el.getparent().remove(el)
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    print(query)
+    res = json.loads(res)
+    print(res)
+    res = res['results']['bindings']
+    game = {}
+    developers = []
+    categories = []
+    screenshots = []
+    publishers = []
+    for res_tmp in res:
+        gameid = res_tmp['game']['value'].split("/")[-1]
+        key = res_tmp['pred']['value'].split("/")[-1]
+        if gameid not in game.keys():
+            game[gameid] = {key: res_tmp['obj']['value']}
+            developers = []
+            categories = []
+            screenshots = []
+            publishers = []
+        else:
+            tmp = game[gameid]
+            value = res_tmp['obj']['value']
+            if key == "screenshots":
+                screenshots.append(value)
+                tmp_dic = {key: screenshots}
+            elif key == "category":
+                categories.append({value: ""})
+                tmp_dic = {key: categories}
+            elif key == "developers":
+                developers.append({value: ""})
+                tmp_dic = {key: developers}
+            elif key == "publishers":
+                publishers.append({value: ""})
+                tmp_dic = {key: publishers}
             else:
-                visited.add(current)
+                tmp_dic = {key: res_tmp['obj']['value']}
 
-    xslt = ET.parse(xsl_file)
-    transform = ET.XSLT(xslt)
-    newdoc = transform(tree)
+            tmp.update(tmp_dic)
 
-    session.close()
-    tparams = {
-        'content': newdoc
-    }"""
-    return render(request, 'index.html')
+
+    for game_tmp in game.keys():
+        developer_index = 0
+        publisher_index = 0
+        category_index = 0
+        for developer_list in game[game_tmp]['developers']:
+            developer = list(developer_list.keys())[0]
+            query = """ PREFIX company: <http://gamesdb.com/entity/company/>
+                            prefix predicate: <http://gamesdb.com/predicate/>
+                                select ?name where{
+                                    company:""" + developer.split("/")[-1] + " predicate:name ?name.}"
+
+            payload_query = {"query": query}
+            res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+            res = json.loads(res)
+            res = res['results']['bindings']
+            game[game_tmp]['developers'][developer_index].update({developer: res[0]['name']['value']})
+            developer_index = developer_index + 1
+
+        for publisher_list in game[game_tmp]['publishers']:
+            publisher = list(publisher_list.keys())[0]
+            query = """ PREFIX company: <http://gamesdb.com/entity/company/>
+                            prefix predicate: <http://gamesdb.com/predicate/>
+                                select ?name where{
+                                    company:""" + publisher.split("/")[-1] + " predicate:name ?name.}"
+
+            payload_query = {"query": query}
+            res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+            res = json.loads(res)
+            res = res['results']['bindings']
+            game[game_tmp]['publishers'][publisher_index].update({publisher: res[0]['name']['value']})
+            publisher_index = publisher_index + 1
+
+        for category_list in game[game_tmp]['category']:
+            category = list(category_list.keys())[0]
+            query = """ PREFIX category: <http://gamesdb.com/entity/categories/>
+                            prefix predicate: <http://gamesdb.com/predicate/>
+                                select ?name where{
+                                    category:""" + category.split("/")[-1] + " predicate:name ?name.}"
+
+            payload_query = {"query": query}
+            res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+            res = json.loads(res)
+            res = res['results']['bindings']
+            game[game_tmp]['category'][category_index].update({category: res[0]['name']['value']})
+            category_index = category_index + 1
+
+    tparam = {'game': game}
+    return render(request, 'index.html', tparam)
+
+
 
 
 def news_feed(request):
@@ -508,8 +573,6 @@ def adv_search(request):
         categories[category] = res[0]['name']['value']
 
     print(categories)
-
-
 
     tparams = {'genres': categories}
 
