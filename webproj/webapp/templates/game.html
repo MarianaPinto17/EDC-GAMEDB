@@ -82,10 +82,14 @@
             <!-- Post Content -->
             <p class="lead">Release Date: {{ release }}</p>
             <p class="lead">Developer(s): {% for developer in devs %}
-                            <a>|{{developer}}|</a>
+                                            {% for dev_uri, dev_string in developer.items %}
+                                                <a>|{{dev_string}}|</a>
+                                            {% endfor %}
                         {% endfor %}</p>
             <p class="lead">Genre(s): {% for genre in genres %}
-                                         <a>|{{ genre }}|</a>
+                                         {% for genre_uri, genre_string in genre.items %}
+                                                <a>|{{genre_string}}|</a>
+                                            {% endfor %}
                                         {% endfor %}</p>
 
             <p class="lead">English Available: {{ english}}</p>
