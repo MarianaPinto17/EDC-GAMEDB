@@ -74,8 +74,8 @@
                                     <p><b>Category/Genre:</b></p>
                                     <select id="cat" name="category" style="padding-right: 4%">
                                     <option value="" disabled selected> -- Select a category/genre -- </option>
-                                    {% for genre in genres %}
-                                        <option value="{{ genre }}">{{ genre }}</option>
+                                    {% for genre_uri, genre_string in genres.items %}
+                                        <option value="{{ genre_uri }}">{{ genre_string }}</option>
                                     {% endfor %}
                                     </select>
 

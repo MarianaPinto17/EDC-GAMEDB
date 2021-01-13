@@ -481,33 +481,36 @@ def apply_filters(request):
 
 
 def adv_search(request):
-    session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
-    session.execute("open dataset")
+    query = """PREFIX pred: <http://gamesdb.com/predicate/>
+                   PREFIX game: <http://gamesdb.com/entity/game/>
+                SELECT distinct ?cat
+                WHERE{
+                    ?game ?pred ?obj .
+                    ?game pred:category ?cat .
+   					 
+                }"""
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    res = res['results']['bindings']
+    categories = {}
+    for cat in res:
+        category = cat['cat']['value']
+        query = """ PREFIX category: <http://gamesdb.com/entity/categories/>
+                                    prefix predicate: <http://gamesdb.com/predicate/>
+                                        select ?name where{
+                                            category:""" + category.split("/")[-1] + " predicate:name ?name.}"
 
-    input1 = "import module namespace games = 'com.games' at '" \
-             + os.path.join(BASE_DIR, 'webapp/xslt/queries.xq') \
-             + "';<genres>{games:get_all_genres()}</genres>"
-    query1 = session.query(input1)
-    genres = query1.execute()
-    # print(genres)
-    input2 = "import module namespace games = 'com.games' at '" \
-             + os.path.join(BASE_DIR, 'webapp/xslt/queries.xq') \
-             + "';<tags>{games:get_all_tags()}</tags>"
-    query2 = session.query(input2)
+        payload_query = {"query": query}
+        res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+        res = json.loads(res)
+        res = res['results']['bindings']
+        categories[category] = res[0]['name']['value']
 
-    tags = query2.execute()
-    # print(tags)
+    print(categories)
 
-    generos = xmltodict.parse(genres)
-    categorias = xmltodict.parse(tags)
-    # print(categorias['tags']['tag'])
 
-    # print(cenas)
-    genres = generos['genres']['genre']
-    genres.extend(categorias['tags']['tag'])
-    genres = sorted(list(set(genres)))
-    # print(genres)
 
-    tparams = {'genres': genres}
+    tparams = {'genres': categories}
 
     return render(request, 'adv_search.html', tparams)
