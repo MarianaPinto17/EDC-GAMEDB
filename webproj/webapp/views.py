@@ -134,13 +134,22 @@ def showGame(request, game_id):
 
 
 def deleteGame(request, game_id):
-    session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
-    session.execute("open dataset")
-    delete_game = "delete node //games/game[@id='" + str(game_id) + "']"
-    print(delete_game)
-    query = session.query(delete_game)
-    query.execute()
-    session.close()
+    endpoint = "http://localhost:7200"
+    repo_name = "gamesdb"
+    client = ApiClient(endpoint=endpoint)
+    accessor = GraphDBApi(client)
+    query = """
+                 PREFIX pred: <http://gamesdb.com/predicate/>
+                 DELETE {?game ?pred ?obj.}
+                 WHERE{
+                    ?game ?pred ?obj .
+                    ?game pred:name ?name.
+                    filter regex(?name,\""""+game_id+"""\","i").
+                 }
+
+            """
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
 
     return redirect(index)
 
@@ -148,8 +157,14 @@ def deleteGame(request, game_id):
 def searchGame(request, pattern):
     print("here")
     pattern = pattern.replace("%20", " ").replace("'", "")
-
-    session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
+    endpoint = "http://localhost:7200"
+    repo_name = "gamesdb"
+    client = ApiClient(endpoint=endpoint)
+    accessor = GraphDBApi(client)
+    query = """
+                
+            """
+    """session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
     session.execute("open dataset")
     search_query = "for $games in collection('dataset')/games/game for $genre in $games//genre where contains(lower-case(" \
                    "$games/title), lower-case('" + pattern + "')) or contains(lower-case($genre), lower-case('" + pattern \
@@ -178,7 +193,7 @@ def searchGame(request, pattern):
     session.close()
     tparams = {
         'content': newdoc
-    }
+    }"""
     return render(request, 'index.html', tparams)
 
 
@@ -188,7 +203,16 @@ def searchGame_2(request):
     print(pattern)
     pattern = pattern.replace("%20", " ").replace("'", "")
 
-    session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
+    endpoint = "http://localhost:7200"
+    repo_name = "gamesdb"
+    client = ApiClient(endpoint=endpoint)
+    accessor = GraphDBApi(client)
+    query = """
+
+                """
+
+
+    """session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
     session.execute("open dataset")
     search_query = "for $games in collection('dataset')/games/game for $genre in $games//genre for $tags in " + "$games//tag where contains(lower-case(" +"$games/title), lower-case('" + pattern + "')) or contains(lower-case($genre), lower-case('" + pattern +  "'))" + " or contains(lower-case($tags), lower-case('" + pattern + "')) return $games "
     print(search_query)
@@ -216,8 +240,8 @@ def searchGame_2(request):
     session.close()
     tparams = {
         'content': newdoc
-    }
-    return render(request, 'index.html', tparams)
+    }"""
+    return render(request, 'index.html')
 
 
 def news_feed(request):
@@ -346,53 +370,18 @@ def newGame(request):
 
 
 def apply_filters(request):
-    print(request.POST)
 
-    try:
-        category = request.POST['category']
-    except:
-        category = ""
-    developer = request.POST['developer']
-    year = request.POST['year']
-    title = request.POST['title']
+    endpoint = "http://localhost:7200"
+    repo_name = "gamesdb"
+    client = ApiClient(endpoint=endpoint)
+    accessor = GraphDBApi(client)
+    query = """
+                PREFIX mov: <http://gamesDB.com/predicate/>
+                SELECT distinct 
+                WHERE { 
+                    
+                """
 
-
-
-    session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
-    session.execute("open dataset")
-
-    input1 = "import module namespace games = 'com.games' at '" \
-             + os.path.join(BASE_DIR, 'webapp/xslt/queries.xq') \
-             + "';<games>{games:apply_filters(" + "'" + category + "'" + ',' + "'" + developer + "'"+ "," + "'" + str(year) + "'" + ",name," + "'"+ title + "')}</games>"
-    query1 = session.query(input1)
-    print(input1)
-    result = query1.execute()
-
-
-    xsl_file = os.path.join(BASE_DIR, 'webapp/xslt/' + 'homepage.xsl')
-
-    tree = ET.fromstring(result)
-
-
-    visited = set()
-    for el in tree.iter('game'):
-
-        if 'id' in el.keys():
-            current = el.get('id')
-            if current in visited:
-                el.getparent().remove(el)
-            else:
-                visited.add(current)
-
-
-    xslt = ET.parse(xsl_file)
-    transform = ET.XSLT(xslt)
-    newdoc = transform(tree)
-
-    session.close()
-    tparams = {
-        'content': newdoc
-    }
     return render(request, 'index.html', tparams)
 
 
