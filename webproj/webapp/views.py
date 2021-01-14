@@ -536,18 +536,135 @@ def apply_filters(request):
     client = ApiClient(endpoint=endpoint)
     accessor = GraphDBApi(client)
     query = """
-                PREFIX mov: <http://gamesDB.com/predicate/>
-                SELECT distinct 
-                WHERE { 
-                    
+                PREFIX pred: <http://gamesdb.com/predicate/>
+                PREFIX cat: <http://gamesdb.com/entity/categories/>
+                SELECT distinct ?category
+                WHERE{
+                    ?game ?pred ?obj .
+                    ?game pred:category ?category .
+   					 
+                }
+            """
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    categories=[]
+    for e in res['results']['bindings']:
+        for v in e.values():
+            categories.append(v['value'])
+
+    query = """
+                PREFIX pred: <http://gamesdb.com/predicate/>
+                PREFIX age: <http://gamesdb.com/entity/ages/>
+                SELECT distinct ?age
+                WHERE {
+    	            ?game ?pred ?obj .
+                    ?game pred:age ?age
+                } order by ?age
+    
+            """
+
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    age = []
+
+    for e in res['results']['bindings']:
+        for v in e.values():
+            age.append(v['value'])
+
+    query = """
+                    PREFIX pred: <http://gamesdb.com/predicate/>
+                    PREFIX company: <http://gamesdb.com/entity/company/>
+                    SELECT distinct ?company
+                    WHERE {
+        	            ?game ?pred ?obj .
+                        ?game pred:company ?company
+                    } order by ?company
+
                 """
+
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    companies = []
+
+    for e in res['results']['bindings']:
+        for v in e.values():
+            companies.append(v['value'])
+
+    query = """
+                       PREFIX pred: <http://gamesdb.com/predicate/>
+                       PREFIX game: <http://gamesdb.com/entity/game/>
+                       SELECT distinct ?game
+                       WHERE {
+           	                ?game ?pred ?obj .
+                            ?game pred:game ?game
+                       } order by ?game
+
+                   """
+
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    games = []
+    for e in res['results']['bindings']:
+        for v in e.values():
+            games.append(v['value'])
+
+    query = """
+                    PREFIX pred: <http://gamesdb.com/predicate/>
+                    SELECT distinct ?name ?pred ?obj
+                    WHERE {
+                        ?game ?pred ?obj .
+                        ?game pred:company ?company .
+                        ?game pred:age ?age .
+                        ?game pred:category ?category .
+                        ?company pred:name ?company_name .
+                        ?age pred:age ?age_value .
+                        ?category pred:name ?category_name .
+                        ?game pred:name ?game_name
+                        ?game pred:date ?date .
+
+            """
+
+
+    categoriesToQuery = []
+
+    for g in categories:
+        if g in request.POST:
+            categoriesToQuery.append(g)
+
+    if len(categoriesToQuery) != 0:
+        aux = ""
+        for g in categoriesToQuery:
+            aux += "\"" + g + "\","
+        aux = aux[:-1]
+        query += """FILTER(?category_name IN(""" + aux + """))"""
+
+    if 'age' in request.POST:
+        query += """FILTER (?age_value = \""""+ request.POST['age'] + """\")"""
+
+    if 'companies'in request.POST:
+        query += """FILTER (?company_name = \"""" + request.POST['companies'] + """\")"""
+
+    if 'games' in request.POST:
+        query += """FILTER (?game_name = \"""" + request.POST['games'] + """\")"""
+        query += """FILTER (?date = \"""" + request.POST['games'] + """\")"""
+
+    tparams = {
+        "categories": categories,
+        "age": age,
+        "companies": companies,
+        "games": games
+    }
 
     return render(request, 'index.html', tparams)
 
 
 def adv_search(request):
-    query = """PREFIX pred: <http://gamesdb.com/predicate/>
-                   PREFIX game: <http://gamesdb.com/entity/game/>
+    query = """ PREFIX pred: <http://gamesdb.com/predicate/>
+                PREFIX game: <http://gamesdb.com/entity/game/>
                 SELECT distinct ?cat
                 WHERE{
                     ?game ?pred ?obj .
