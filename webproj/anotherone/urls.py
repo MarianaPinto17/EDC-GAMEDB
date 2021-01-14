@@ -22,7 +22,6 @@ urlpatterns = [
     path('', views.index, name="index"),
     path('game/<int:game_id>/', views.showGame, name="ShowGame"),
     path('delete_game/<int:game_id>', views.deleteGame, name="DeleteGame"),
-    path('search/<str:pattern>/', views.searchGame, name="SearchGame"),
     path('search/', views.searchGame_2, name="SearchGame2"),
     path('searchdb/', views.searchdb, name="SearchDB"),
     path('news/', views.news_feed, name="post_feed"),

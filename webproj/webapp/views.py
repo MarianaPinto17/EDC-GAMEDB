@@ -242,49 +242,6 @@ def deleteGame(request, game_id):
     return redirect(index)
 
 
-def searchGame(request, pattern):
-    print("here")
-    pattern = pattern.replace("%20", " ").replace("'", "")
-    endpoint = "http://localhost:7200"
-    repo_name = "gamesdb"
-    client = ApiClient(endpoint=endpoint)
-    accessor = GraphDBApi(client)
-    query = """
-                
-            """
-    """session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
-    session.execute("open dataset")
-    search_query = "for $games in collection('dataset')/games/game for $genre in $games//genre where contains(lower-case(" \
-                   "$games/title), lower-case('" + pattern + "')) or contains(lower-case($genre), lower-case('" + pattern \
-                   + "')) return $games "
-    query = session.query(search_query)
-
-    result = "<?xml version=\"1.0\"?>" + "\n\r<games>\n" + query.execute() + "\n</games>\n"
-    xsl_file = os.path.join(BASE_DIR, 'webapp/xslt/' + 'homepage.xsl')
-
-    tree = ET.fromstring(result)
-
-    visited = set()
-    for el in tree.iter('game'):
-        print(el)
-        if 'id' in el.keys():
-            current = el.get('id')
-            if current in visited:
-                el.getparent().remove(el)
-            else:
-                visited.add(current)
-
-    xslt = ET.parse(xsl_file)
-    transform = ET.XSLT(xslt)
-    newdoc = transform(tree)
-
-    session.close()
-    tparams = {
-        'content': newdoc
-    }"""
-    return render(request, 'index.html', tparams)
-
-
 def searchGame_2(request):
     print(request.POST)
     pattern = request.POST['pattern']
@@ -444,83 +401,144 @@ def addGame(request, error=False):
 
 def newGame(request):
     print(request.POST)
-    rooter = Element('games')
-    root = SubElement(rooter, 'game')
     id = str(randint(1, 150))
-    root.set('id', id)
-    title = SubElement(root, 'title')
-    title.text = request.POST['title']
-    date = SubElement(root, 'release-date')
-    date.text = request.POST['year']
-    english = SubElement(root, 'english_available')
+    title = request.POST['title']
+    date = request.POST['year']
     if request.POST['english'] == 'Y':
-        english.text = 'True'
+        english = 'True'
     else:
-        english.text = 'False'
-    developers = SubElement(root, 'developers')
+        english = 'False'
+
+    developers_post = []
     for developer in request.POST['developers'].split(';'):
-        devnode = SubElement(developers, 'company')
-        devname = SubElement(devnode, 'name')
-        devname.text = developer
-    publishers = SubElement(root, 'publishers')
-    required_age = SubElement(root, 'required_age')
-    required_age.text = request.POST['rating']
-    categories = SubElement(root, 'categories')
-    genres = SubElement(root, 'genres')
+        developers_post.append(developer)
+
+    required_age = request.POST['rating']
+    genres = []
     for genre in request.POST['genres'].split(";"):
-        genrenode = SubElement(genres, 'genre')
-        genrenode.text = genre
-    tags = SubElement(root, 'tags')
-    ratings = SubElement(root, 'ratings')
-    positive = SubElement(ratings, 'positive')
-    positive.text = "0"
-    negative = SubElement(ratings, 'negative')
-    negative.text = "0"
-    playtime = SubElement(root, 'playtime')
-    average = SubElement(playtime, 'average')
-    average.text = "0"
-    median = SubElement(playtime, 'median')
-    median.text = "0"
+        genres.append(genre)
 
-    owner = SubElement(root, 'ownership')
-    lower = SubElement(owner, 'lower_bound')
-    lower.text = "0"
-    high = SubElement(owner, 'upper_bound')
-    high.text = "0"
-    price = SubElement(root, 'price')
-    price.text = request.POST["price"]
-    description = SubElement(root, 'description')
-    description.text = request.POST['description']
-    gallery = SubElement(root, 'gallery')
-    header = SubElement(gallery, 'header')
-    image = SubElement(header, 'image')
-    full_size = SubElement(image, 'full_size')
-    full_size.text = request.POST['url']
+    positive = "0"
+    negative = "0"
+    average = "0"
 
-    xml = tostring(rooter).decode('utf-8')
-    file = open('cenas.xml', "w")
-    file.write(xml)
+    median = "0"
+    lower = "0"
+    high = "0"
+    price = request.POST["price"]
+    description = request.POST['description']
 
-    xsd_name = "dataset.xsd"
-    xsd_file = os.path.join(BASE_DIR, xsd_name)
-    tree = ET.fromstring(xml)
-    xsd_parsed = ET.parse(xsd_file)
-    xsd = ET.XMLSchema(xsd_parsed)
+    full_size = request.POST['url']
 
-    if xsd.validate(tree):
-        session = BaseXClient.Session('localhost', 1984, 'admin', 'admin')
-        session.execute("open dataset")
-        query_add_game = "let $games := doc('dataset')" + "let $node := '" + tostring(root).decode(
-            'utf-8') + "' return insert node fn:parse-xml(" + "$node) as last into $games "
+    query = """ PREFIX pred: <http://gamesdb.com/predicate/>
+                    PREFIX game: <http://gamesdb.com/entity/game/>
+                    SELECT distinct ?cat
+                    WHERE{
+                        ?game ?pred ?obj .
+                        ?game pred:category ?cat .
 
-        try:
-            query = session.query(query_add_game)
-            query.execute()
-        except:
-            return redirect(addGame, error=True)
-        return redirect(showGame, game_id=id)
-    else:
-        return redirect(addGame, error=True)
+                    }"""
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    res = res['results']['bindings']
+    categories = {}
+    for cat in res:
+        category = cat['cat']['value']
+        query = """ PREFIX category: <http://gamesdb.com/entity/categories/>
+                                        prefix predicate: <http://gamesdb.com/predicate/>
+                                            select ?name where{
+                                                category:""" + category.split("/")[-1] + " predicate:name ?name.}"
+
+        payload_query = {"query": query}
+        res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+        res = json.loads(res)
+        res = res['results']['bindings']
+        categories[category] = res[0]['name']['value']
+
+
+    #check if category is on db
+    cat_keys = []
+
+    for cat in genres:
+        if cat in categories.values():
+            cat_keys.append(list(categories.keys())[list(categories.values()).index(cat)])
+    print(cat_keys)
+
+    query = """ PREFIX pred: <http://gamesdb.com/predicate/>
+                       PREFIX game: <http://gamesdb.com/entity/game/>
+                       SELECT distinct ?dev
+                       WHERE{
+                           ?game ?pred ?obj .
+                           ?game pred:developers ?dev .
+
+                       }"""
+    payload_query = {"query": query}
+    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    res = json.loads(res)
+    res = res['results']['bindings']
+    developers = {}
+    for dev in res:
+        developer = dev['dev']['value']
+        query = """ PREFIX company: <http://gamesdb.com/entity/company/>
+                                           prefix predicate: <http://gamesdb.com/predicate/>
+                                               select ?name where{
+                                                   company:""" + developer.split("/")[-1] + " predicate:name ?name.}"
+
+        payload_query = {"query": query}
+        res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+        res = json.loads(res)
+        res = res['results']['bindings']
+        developers[developer] = res[0]['name']['value']
+
+    dev_keys = []
+
+    for dev in developers_post:
+        if dev in developers.values():
+            dev_keys.append(list(developers.keys())[list(developers.values()).index(dev)])
+    print(dev_keys)
+
+
+    to_insert = []
+    to_insert.append("game:"+id+ " predicate:name \"" + title + "\"")
+    to_insert.append("game:"+id+ " predicate:date \"" + date + "\"")
+    to_insert.append("game:"+id+ " predicate:english \"" + english + "\"")
+    to_insert.append("game:"+id+ " predicate:positive-ratings \"" + positive + "\"")
+    to_insert.append("game:"+id+ " predicate:negative-ratings \"" + negative + "\"")
+    to_insert.append("game:"+id+ " predicate:average-playtime \"" + average + "\"")
+    to_insert.append("game:"+id+ " predicate:median-playtime \"" + median + "\"")
+    to_insert.append("game:"+id+ " predicate:lower-ownership \"" + lower + "\"")
+    to_insert.append("game:"+id+ " predicate:upper-ownership \"" + high + "\"")
+    to_insert.append("game:"+id+ " predicate:price \"" + price + "\"")
+    to_insert.append("game:"+id+ " predicate:description \"" + description + "\"")
+    to_insert.append("game:"+id+ " predicate:header \"" + full_size + "\"")
+    to_insert.append("game:"+id+ " predicate:age " + "ages:not_available")
+
+
+
+    for dev in dev_keys:
+        to_insert.append("game:"+id+ " predicate:developers company:" + dev.split("/")[-1])
+        to_insert.append("game:"+id+ " predicate:publishers company:" + dev.split("/")[-1])
+
+
+    for cat in cat_keys:
+        to_insert.append("game:"+id+ " predicate:category categories:" + cat.split("/")[-1])
+
+    for query in to_insert:
+        to_query = """PREFIX predicate: <http://gamesdb.com/predicate/>
+                   PREFIX game: <http://gamesdb.com/entity/game/>
+                   PREFIX company: <http://gamesdb.com/entity/company/>
+                   PREFIX categories: <http://gamesdb.com/entity/categories/>
+                   
+                   INSERT DATA{
+                    """ + query + "}"
+        print(to_query)
+        payload_query = {"update": to_query}
+        print(accessor.sparql_update(body=payload_query, repo_name=repo_name))
+
+
+    print(id)
+    return redirect(showGame, game_id=id)
 
 
 def apply_filters(request):
