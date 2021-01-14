@@ -122,9 +122,7 @@ def showGame(request, game_id):
                    PREFIX game: <http://gamesdb.com/entity/game/>
                 SELECT ?pred ?obj ?id
                 WHERE{
-                    game:""" + str(game_id) + """ ?pred ?obj .
-                    game:440 pred:positive-ratings ?ratings .
-   					 
+                    game:""" + str(game_id) + """ ?pred ?obj .	 
                 }
             """
     payload_query = {"query": query}
@@ -229,22 +227,17 @@ def showGame(request, game_id):
 
 
 def deleteGame(request, game_id):
-    endpoint = "http://localhost:7200"
-    repo_name = "gamesdb"
-    client = ApiClient(endpoint=endpoint)
-    accessor = GraphDBApi(client)
-    query = """
-                 PREFIX pred: <http://gamesdb.com/predicate/>
-                 DELETE {?game ?pred ?obj.}
-                 WHERE{
-                    ?game ?pred ?obj .
-                    ?game pred:name ?name.
-                    filter regex(?name,\"""" + game_id + """\","i").
-                 }
 
-            """
-    payload_query = {"query": query}
-    res = accessor.sparql_select(body=payload_query, repo_name=repo_name)
+    query = """ PREFIX pred: <http://gamesdb.com/predicate/>
+                PREFIX game: <http://gamesdb.com/entity/game/>
+                Delete
+                WHERE{
+    				game:"""+str(game_id)+" ?pred ?obj }"
+
+    print(query)
+    payload_query = {"update": query}
+    res = accessor.sparql_update(body=payload_query, repo_name=repo_name)
+    print(res)
 
     return redirect(index)
 
@@ -694,3 +687,21 @@ def adv_search(request):
     tparams = {'genres': categories}
 
     return render(request, 'adv_search.html', tparams)
+
+
+def searchdb(request):
+    pattern = request.POST['pattern_db']
+    pattern = pattern.replace("%20", " ").replace("'", "")
+
+    endpoint = "https://dbpedia.org/sparql"
+
+    query = """SELECT *
+    WHERE
+         {
+            ?term rdfs:label """ + "\""+pattern+"\"@en}"
+    print(query)
+    sparql = SPARQLWrapper(endpoint)
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    result = sparql.query().convert()
+    print(result)
